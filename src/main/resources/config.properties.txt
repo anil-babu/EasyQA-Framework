@@ -1,0 +1,13 @@
+# Browser Configuration
+browser=chrome
+headless=false
+wait.time.seconds=30
+
+# Application URL
+url=https://www.saucedemo.com/
+
+# Environment
+env=qa
+
+# Report Configuration
+report.title=EasyQA Framework Report
