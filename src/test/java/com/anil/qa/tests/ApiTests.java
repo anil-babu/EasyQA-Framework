@@ -1,6 +1,6 @@
 package com.anil.qa.tests;
 
-import com.anil.qa.core.BaseTest;
+import com.anil.qa.base.BaseTest;
 import io.restassured.response.Response;
 import org.testng.Assert;
 import org.testng.annotations.Test;

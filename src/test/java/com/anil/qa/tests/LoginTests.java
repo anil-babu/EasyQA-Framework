@@ -1,7 +1,7 @@
 package com.anil.qa.tests;
 
-import com.anil.qa.core.BaseTest;
-import com.anil.qa.core.DriverManager;
+import com.anil.qa.base.BaseTest;
+import com.anil.qa.base.DriverManager;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;

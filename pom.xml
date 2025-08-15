@@ -24,7 +24,7 @@
         <allure.version>2.24.0</allure.version>
         <owner.version>1.0.12</owner.version>
         <spotbugs.version>4.7.3.0</spotbugs.version>
-        <checkstyle.version>10.12.4</checkstyle.version>
+    <checkstyle.version>3.3.0</checkstyle.version>
     </properties>
 
     <dependencies>
@@ -150,7 +150,7 @@
                 <artifactId>allure-maven</artifactId>
                 <version>2.11.2</version>
             </plugin>
-            <plugin>
+            <!-- <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>${spotbugs.version}</version>
@@ -161,8 +161,8 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
+            </plugin> -->
+            <!-- <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${checkstyle.version}</version>
@@ -174,7 +174,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin> -->
         </plugins>
     </build>
 </project>

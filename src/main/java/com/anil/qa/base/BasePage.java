@@ -1,12 +1,6 @@
-package com.anil.qa.core;
-
+package com.anil.qa.base;
 import java.time.Duration;
-
-import lombok.extern.slf4j.Slf4j;
 import io.qameta.allure.Step;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
@@ -17,196 +11,210 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import com.anil.qa.config.ConfigManager;
+import com.anil.qa.utils.ConfigManager;
 import com.anil.qa.utils.ReportManager;
-
-/**
- * BasePage is the generic parent class for all page objects.
- * Provides common Selenium actions and Allure step logging.
- * @param <T> the type of the page object
- */
-@Slf4j
 public class BasePage<T extends BasePage<T>> {
-    protected WebDriver driver;
-    protected WebDriverWait wait;
-    protected Actions actions;
-    protected JavascriptExecutor js;
-    
-    
-    protected BasePage(WebDriver driver) {
-        this.driver = driver;
-        int waitTime = Integer.parseInt(ConfigManager.getProperty("wait.time.seconds", "30"));
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(waitTime));
-        this.actions = new Actions(driver);
-        this.js = (JavascriptExecutor) driver;
-        PageFactory.initElements(driver, this);
+    /** WebDriver instance. */
+    private final WebDriver driver;
+    /** WebDriverWait instance. */
+    private final WebDriverWait wait;
+    /** Actions instance. */
+    private final Actions actions;
+    /** JavascriptExecutor instance. */
+    private final JavascriptExecutor js;
+
+    /**
+     * Constructs a BasePage object.
+     * @param webDriver the WebDriver instance
+     */
+    protected BasePage(final WebDriver webDriver) {
+        this.driver = webDriver;
+        int waitTime = Integer.parseInt(
+            ConfigManager.getProperty("wait.time.seconds", "30")
+        );
+        this.wait = new WebDriverWait(webDriver, Duration.ofSeconds(waitTime));
+        this.actions = new Actions(webDriver);
+        this.js = (JavascriptExecutor) webDriver;
+        PageFactory.initElements(webDriver, this);
     }
-    
+
     /**
      * Waits for the given element to be visible.
      * @param element the WebElement to wait for
      * @return the visible WebElement
      */
     @Step("Wait for element to be visible")
-    public WebElement waitForElementToBeVisible(WebElement element) {
+    public WebElement waitForElementToBeVisible(final WebElement element) {
         try {
-            log.debug("Waiting for element to be visible: {}", element);
             return wait.until(ExpectedConditions.visibilityOf(element));
-        } catch (Exception e) {
-            log.error("Element not visible: {}", element, e);
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
      * Waits for the given element to be clickable.
      * @param element the WebElement to wait for
      * @return the clickable WebElement
      */
     @Step("Wait for element to be clickable")
-    public WebElement waitForElementToBeClickable(WebElement element) {
+    public WebElement waitForElementToBeClickable(final WebElement element) {
         try {
-            log.debug("Waiting for element to be clickable: {}", element);
             return wait.until(ExpectedConditions.elementToBeClickable(element));
-        } catch (Exception e) {
-            log.error("Element not clickable: {}", element, e);
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
      * Clicks on the given element.
      * @param element the WebElement to click
      */
     @Step("Click on element")
-    public void click(WebElement element) {
+    public void click(final WebElement element) {
         try {
             waitForElementToBeClickable(element);
-            log.debug("Clicking on element: {}", element);
             element.click();
-        } catch (StaleElementReferenceException e) {
-            log.warn("Stale element reference, retrying click operation", e);
-            WebElement refreshedElement = wait.until(ExpectedConditions.refreshed(
-                    ExpectedConditions.elementToBeClickable(element)));
+        } catch (final StaleElementReferenceException e) {
+            WebElement refreshedElement = wait.until(
+                ExpectedConditions.refreshed(
+                    ExpectedConditions.elementToBeClickable(element)
+                )
+            );
             refreshedElement.click();
-        } catch (Exception e) {
-            log.error("Failed to click element: {}", element, e);
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
+    /**
+     * Clicks on the given element using JavaScript.
+     * @param element the WebElement to click
+     */
     protected void jsClick(WebElement element) {
         try {
             waitForElementToBeVisible(element);
-            log.debug("JS clicking on element: {}", element);
-            js.executeScript("arguments[0].click();", element);
-        } catch (Exception e) {
-            log.error("Failed to JS click element: {}", element, e);
+            js.executeScript(
+                "arguments[0].click();",
+                element
+            );
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
      * Types text into the given element.
      * @param element the WebElement to type into
      * @param text the text to type
      */
     @Step("Type '{text}' in element")
-    public void sendKeys(WebElement element, String text) {
+    public void sendKeys(final WebElement element, final String text) {
         try {
             waitForElementToBeVisible(element);
             element.clear();
-            log.debug("Typing text '{}' in element: {}", text, element);
             element.sendKeys(text);
-        } catch (Exception e) {
-            log.error("Failed to type text in element: {}", element, e);
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
-     * Selects an option by visible text from a dropdown.
-     * @param element the dropdown WebElement
-     * @param text the visible text to select
+    * Selects an option by visible text from a dropdown.
+    * @param element the dropdown WebElement
+    * @param text the visible text to select
      */
     @Step("Select '{text}' from dropdown")
-    public void selectByVisibleText(WebElement element, String text) {
+    public void selectByVisibleText(
+        final WebElement element,
+        final String text
+    ) {
         try {
             waitForElementToBeVisible(element);
-            log.debug("Selecting option '{}' from dropdown: {}", text, element);
-            new Select(element).selectByVisibleText(text);
-        } catch (Exception e) {
-            log.error("Failed to select option from dropdown: {}", element, e);
+            Select select = new Select(element);
+            select
+                .selectByVisibleText(
+                    text
+                );
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
      * Gets the text from the given element.
      * @param element the WebElement
      * @return the text of the element
      */
     @Step("Get text from element")
-    public String getText(WebElement element) {
+    public String getText(final WebElement element) {
         try {
             waitForElementToBeVisible(element);
-            String text = element.getText();
-            log.debug("Retrieved text '{}' from element: {}", text, element);
-            return text;
-        } catch (Exception e) {
-            log.error("Failed to get text from element: {}", element, e);
+            String textValue = element.getText();
+            return textValue;
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
      * Checks if the element is displayed.
      * @param element the WebElement
      * @return true if displayed, false otherwise
      */
-    public boolean isElementDisplayed(WebElement element) {
+    public boolean isElementDisplayed(final WebElement element) {
         try {
             return element.isDisplayed();
-        } catch (NoSuchElementException | StaleElementReferenceException e) {
+        } catch (
+            final NoSuchElementException
+            | StaleElementReferenceException e
+        ) {
             return false;
         }
     }
-    
+
+    // Removed duplicate/partial scrollToElement and SCROLL_PAUSE_MS
     /**
-     * Scrolls to the given element.
-     * @param element the WebElement to scroll to
+    * Scrolls to the given element.
+    * Subclasses overriding this method should ensure that the scroll action is
+    * safe and does not interfere with other actions.
+    * This method is final to prevent unsafe overrides.
+    * @param element the WebElement to scroll to
      */
-    public void scrollToElement(WebElement element) {
-        js.executeScript("arguments[0].scrollIntoView(true);", element);
+    private static final int SCROLL_PAUSE_MS = 500;
+    public final void scrollToElement(final WebElement element) {
+        js.executeScript(
+            "arguments[0].scrollIntoView(true);",
+            element
+        );
         try {
-            Thread.sleep(500); // Small pause for scroll to complete
-        } catch (InterruptedException e) {
+            // Small pause for scroll to complete
+            Thread.sleep(SCROLL_PAUSE_MS);
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     /**
      * Hovers over the given element.
      * @param element the WebElement to hover over
      */
-    public void hoverOverElement(WebElement element) {
+    public void hoverOverElement(final WebElement element) {
         try {
             waitForElementToBeVisible(element);
             actions.moveToElement(element).perform();
-        } catch (Exception e) {
-            log.error("Failed to hover over element: {}", element, e);
+        } catch (final Exception e) {
             throw e;
         }
     }
-    
+
     /**
      * Logs a step in the report.
      * @param stepDescription the step description
      */
     @Step("Log step")
-    public void logStep(String stepDescription) {
-        log.info(stepDescription);
+    public void logStep(final String stepDescription) {
+    // Logging removed
         ReportManager.logInfo(stepDescription);
     }
 }
