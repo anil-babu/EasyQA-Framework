@@ -1,4 +1,4 @@
-package com.anil.qa.base;
+package com.anil.qa.core;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
@@ -10,8 +10,12 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.safari.SafariDriver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.anil.qa.utils.ConfigManager;
+import com.anil.qa.config.ConfigManager;
 
+/**
+ * DriverManager manages WebDriver instances for different browsers and threads.
+ * Supports Chrome, Firefox, Edge, and Safari.
+ */
 public class DriverManager {
     private static final Logger logger = LogManager.getLogger(DriverManager.class);
     private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
@@ -20,6 +24,10 @@ public class DriverManager {
         // Private constructor to prevent instantiation
     }
     
+    /**
+     * Gets the current thread's WebDriver instance, creating it if necessary.
+     * @return the WebDriver
+     */
     public static WebDriver getDriver() {
         if (driver.get() == null) {
             setupDriver();
@@ -27,6 +35,9 @@ public class DriverManager {
         return driver.get();
     }
     
+    /**
+     * Sets up the WebDriver based on config properties.
+     */
     public static void setupDriver() {
         String browser = ConfigManager.getProperty("browser").toLowerCase();
         boolean headless = Boolean.parseBoolean(ConfigManager.getProperty("headless"));
@@ -72,6 +83,9 @@ public class DriverManager {
         driver.get().manage().window().maximize();
     }
     
+    /**
+     * Quits and removes the current thread's WebDriver instance.
+     */
     public static void quitDriver() {
         if (driver.get() != null) {
             logger.info("Quitting WebDriver");

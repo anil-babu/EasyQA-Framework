@@ -103,3 +103,48 @@ Contributions, issues, and feature requests are welcome. If you plan to contribu
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## CI/CD
+
+- GitHub Actions workflow runs on every push and pull request to `main`.
+- It builds, tests, and generates an Allure report.
+- Download the Allure report artifact from the GitHub Actions run.
+
+## Docker
+
+To build and run tests in Docker:
+
+```sh
+docker build -t easyqa-framework .
+docker run --rm easyqa-framework
+```
+
+## Allure Reports
+
+- After CI run, download the `allure-report` artifact from GitHub Actions.
+- To view locally:
+  1. Extract the artifact.
+  2. Run: `allure serve <path-to-extracted-report>`
+
+## Javadoc
+
+All public classes and key methods are documented with Javadoc. You can generate HTML documentation with:
+
+```sh
+mvn javadoc:javadoc
+```
+
+## Data-Driven Testing Example
+
+You can use ExcelUtils for data-driven tests:
+
+```java
+@DataProvider(name = "excelData")
+public Object[][] getData() {
+    return ExcelUtils.provideData("src/test/resources/testdata/testData.xlsx", "Sheet1");
+}
+```
+
+## Custom Annotations
+
+You can categorize tests using custom annotations, e.g. `@Smoke`, `@Regression`.
+

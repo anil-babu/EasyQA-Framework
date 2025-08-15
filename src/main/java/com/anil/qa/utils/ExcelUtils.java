@@ -16,14 +16,32 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class ExcelUtils {
+/**
+ * IExcelUtils defines contract for Excel data utilities.
+ */
+public interface IExcelUtils {
+    /**
+     * Reads test data from an Excel file and returns it as a 2D Object array.
+     * @param filePath the path to the Excel file
+     * @param sheetName the sheet name
+     * @return test data as Object[][]
+     */
+    Object[][] getTestData(String filePath, String sheetName);
+}
+
+/**
+ * ExcelUtils provides static and instance methods for reading test data from Excel files.
+ * Supports data-driven testing for TestNG.
+ */
+public class ExcelUtils implements IExcelUtils {
     private static final Logger logger = LogManager.getLogger(ExcelUtils.class);
     
     private ExcelUtils() {
         // Private constructor to prevent instantiation
     }
     
-    public static Object[][] getTestData(String filePath, String sheetName) {
+    @Override
+    public Object[][] getTestData(String filePath, String sheetName) {
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
             
@@ -54,6 +72,12 @@ public class ExcelUtils {
         }
     }
     
+    /**
+     * Reads test data from an Excel file and returns it as a List of Maps.
+     * @param filePath the path to the Excel file
+     * @param sheetName the sheet name
+     * @return test data as List<Map<String, String>>
+     */
     public static List<Map<String, String>> getTestDataAsList(String filePath, String sheetName) {
         List<Map<String, String>> testDataList = new ArrayList<>();
         
@@ -92,6 +116,16 @@ public class ExcelUtils {
             logger.error("Failed to load test data as list from Excel file: {}", filePath, e);
             throw new RuntimeException("Failed to load test data as list from Excel file", e);
         }
+    }
+    
+    /**
+     * Provides data for TestNG DataProvider.
+     * @param filePath the path to the Excel file
+     * @param sheetName the sheet name
+     * @return test data as Object[][]
+     */
+    public static Object[][] provideData(String filePath, String sheetName) {
+        return new ExcelUtils().getTestData(filePath, sheetName);
     }
     
     private static String getCellValueAsString(Cell cell) {

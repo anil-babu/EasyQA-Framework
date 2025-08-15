@@ -1,4 +1,4 @@
-package com.anil.qa.base;
+package com.anil.qa.core;
 
 import java.io.IOException;
 
@@ -12,14 +12,21 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Parameters;
 
-import com.anil.qa.utils.ConfigManager;
+import com.anil.qa.config.ConfigManager;
 import com.anil.qa.utils.ReportManager;
 import com.anil.qa.utils.ScreenshotUtils;
 
+/**
+ * BaseTest sets up and tears down WebDriver and reporting for all tests.
+ * Handles suite and method-level setup/teardown.
+ */
 public class BaseTest {
     private static final Logger logger = LogManager.getLogger(BaseTest.class);
     protected WebDriver driver;
     
+    /**
+     * Runs before the test suite. Loads config and initializes reports.
+     */
     @BeforeSuite
     public void beforeSuite() {
         logger.info("Starting test execution");
@@ -27,6 +34,10 @@ public class BaseTest {
         ReportManager.initReports();
     }
     
+    /**
+     * Runs before each test method. Sets up WebDriver and navigates to base URL.
+     * @param browser the browser to use
+     */
     @BeforeMethod
     @Parameters(value = {"browser"})
     public void beforeMethod(String browser) {
@@ -38,6 +49,10 @@ public class BaseTest {
         driver.get(ConfigManager.getProperty("url"));
     }
     
+    /**
+     * Runs after each test method. Handles reporting and driver cleanup.
+     * @param result the ITestResult
+     */
     @AfterMethod
     public void afterMethod(ITestResult result) {
         if (result.getStatus() == ITestResult.FAILURE) {
@@ -58,6 +73,9 @@ public class BaseTest {
         DriverManager.quitDriver();
     }
     
+    /**
+     * Runs after the test suite. Flushes reports.
+     */
     @AfterSuite
     public void afterSuite() {
         logger.info("Finishing test execution");

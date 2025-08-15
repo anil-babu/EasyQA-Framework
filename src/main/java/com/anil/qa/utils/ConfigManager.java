@@ -1,4 +1,4 @@
-package com.anil.qa.utils;
+package com.anil.qa.config;
 
 import java.io.FileInputStream;
 import java.io.IOException;
