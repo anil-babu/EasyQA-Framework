@@ -43,6 +43,7 @@ jobs:
 
       - name: Import Check
         run: |
+          cd python
           python -c "from easyqa.core.config import Config; print('✅ Config import OK')" || true
           python -c "from easyqa.data_generation.ai_data_generator import AIDataGenerator; print('✅ Data generator import OK')"
           python -c "from easyqa.analytics.ml_analytics import MLAnalytics; print('✅ ML Analytics import OK')"
@@ -67,9 +68,11 @@ jobs:
           pip install -r requirements-minimal.txt
 
       - name: Run unit tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
         run: |
-          # Create and run simple unit tests
-          pytest python/easyqa/tests/ -v -k "not ecommerce" --tb=short || true
+          # Run unit tests with correct PYTHONPATH
+          pytest python/easyqa/tests/test_unit.py -v --tb=short
 
       - name: Upload test results
         if: always()

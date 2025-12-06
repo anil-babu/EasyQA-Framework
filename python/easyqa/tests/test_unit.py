@@ -4,8 +4,9 @@ import pytest
 from pathlib import Path
 import sys
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add python directory to path so we can import easyqa
+python_dir = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(python_dir))
 
 
 class TestDataGenerator:
