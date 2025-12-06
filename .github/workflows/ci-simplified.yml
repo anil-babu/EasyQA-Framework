@@ -72,7 +72,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/python
         run: |
           # Run unit tests with correct PYTHONPATH
-          pytest python/easyqa/tests/test_unit.py -v --tb=short
+          python -m pytest python/easyqa/tests/test_unit.py -v --tb=short
 
       - name: Upload test results
         if: always()
