@@ -1,0 +1,82 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Testing artifacts
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Java build artifacts
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test outputs
+test-output/
+screenshots/
+videos/
+logs/
+visual_baselines/
+visual_results/
+data/
+test_data/
+allure-results/
+allure-report/
+
+# Docker
+Dockerfile*
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# CI/CD
+.circleci/
+.travis.yml
+azure-pipelines.yml
+
+# Temporary files
+*.log
+*.tmp
+tmp/
+temp/
+
+# Node modules (if any)
+node_modules/
+package-lock.json

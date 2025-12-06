@@ -1,0 +1,42 @@
+# Lightweight Dockerfile for EasyQA Framework
+# Optimized for CI/CD and quick testing
+# Uses only Playwright (no Selenium), minimal dependencies
+
+FROM mcr.microsoft.com/playwright/python:v1.41.0-jammy
+
+# Set working directory
+WORKDIR /app
+
+# Install Java and Maven
+RUN apt-get update && apt-get install -y \
+    openjdk-11-jdk \
+    maven \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements-minimal.txt /app/
+COPY pom.xml /app/
+COPY src /app/src/
+
+# Install minimal Python dependencies
+RUN pip install --no-cache-dir -r requirements-minimal.txt
+
+# Install Java dependencies
+RUN mvn clean install -DskipTests
+
+# Copy rest of project
+COPY . /app/
+
+# Create directories
+RUN mkdir -p screenshots videos logs visual_baselines visual_results data test_data models test-output/reports
+
+# Set environment variables
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV MAVEN_HOME=/usr/share/maven
+ENV PATH="${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${PATH}"
+ENV PYTHONPATH=/app/python:${PYTHONPATH}
+
+# Run tests
+CMD ["pytest", "python/easyqa/tests/", "-v", "--html=test-output/reports/report.html", "--self-contained-html"]

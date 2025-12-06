@@ -1,0 +1,56 @@
+version: '3.8'
+
+# Lightweight docker-compose for quick testing
+# Uses minimal dependencies and single browser
+
+services:
+  # Main test execution service (lightweight)
+  easyqa-tests-light:
+    build:
+      context: .
+      dockerfile: Dockerfile.lightweight
+    container_name: easyqa-framework-light
+    volumes:
+      - ./test-output:/app/test-output
+      - ./screenshots:/app/screenshots
+      - ./logs:/app/logs
+    environment:
+      - EASYQA_BROWSER=chromium
+      - EASYQA_HEADLESS=true
+      - CI=true
+    networks:
+      - easyqa-network
+    command: pytest python/easyqa/tests/ -v --html=test-output/reports/report.html --self-contained-html
+
+  # Selenium Hub (single browser for lightweight setup)
+  selenium-hub-light:
+    image: selenium/hub:4.16.0
+    container_name: selenium-hub-light
+    ports:
+      - "4444:4444"
+    networks:
+      - easyqa-network
+
+  # Chrome only (for lightweight setup)
+  chrome-light:
+    image: selenium/node-chrome:4.16.0
+    container_name: selenium-chrome-light
+    depends_on:
+      - selenium-hub-light
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub-light
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=3
+    shm_size: 2gb
+    networks:
+      - easyqa-network
+
+networks:
+  easyqa-network:
+    driver: bridge
+
+volumes:
+  test-output:
+  screenshots:
+  logs:

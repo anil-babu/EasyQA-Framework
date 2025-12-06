@@ -76,7 +76,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-minimal.txt
 
       - name: Install Playwright browsers
         run: |
@@ -175,15 +175,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
-        run: docker build -t easyqa-framework:latest .
+      - name: Build lightweight Docker image
+        run: docker build -f Dockerfile.lightweight -t easyqa-framework:light .
 
       - name: Run tests in Docker
         run: |
           docker run --rm \
             -v $(pwd)/test-output:/app/test-output \
-            easyqa-framework:latest \
-            bash -c "mvn test && pytest python/easyqa/tests/ -v"
+            -v $(pwd)/screenshots:/app/screenshots \
+            easyqa-framework:light
 
       - name: Upload Docker test results
         if: always()
@@ -191,6 +191,13 @@ jobs:
         with:
           name: docker-test-results
           path: test-output/
+
+      - name: Upload Docker screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-screenshots
+          path: screenshots/
 
   # Performance testing
   performance-tests:
