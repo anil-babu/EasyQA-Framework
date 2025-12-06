@@ -1,8 +1,15 @@
 """ML-Powered Test Analytics and Insights."""
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-import pandas as pd
+try:
+    import numpy as np
+    from sklearn.ensemble import RandomForestClassifier
+    import pandas as pd
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    import warnings
+    warnings.warn("scikit-learn/pandas not available. ML features will be limited. "
+                  "Install with: pip install scikit-learn pandas numpy")
+
 from typing import List, Dict, Optional
 import json
 from pathlib import Path
@@ -49,6 +56,14 @@ class MLAnalytics:
         Returns:
             Prediction with probability and insights
         """
+        if not ML_AVAILABLE:
+            return {
+                'prediction': 'ml_unavailable',
+                'probability': 0.0,
+                'confidence': 'low',
+                'message': 'ML libraries not installed. Install with: pip install scikit-learn pandas numpy'
+            }
+
         if len(self.test_history) < 50:
             return {
                 'prediction': 'insufficient_data',
@@ -60,6 +75,14 @@ class MLAnalytics:
         # Train model if not already trained
         if self.model is None:
             self._train_failure_predictor()
+
+        if self.model is None:
+            return {
+                'prediction': 'error',
+                'probability': 0.0,
+                'confidence': 'low',
+                'message': 'Model training failed'
+            }
 
         # Prepare features
         features = self._extract_features(test_metadata)
@@ -92,6 +115,10 @@ class MLAnalytics:
 
     def _train_failure_predictor(self):
         """Train ML model to predict test failures."""
+        if not ML_AVAILABLE:
+            logger.warning("ML libraries not available")
+            return
+
         if len(self.test_history) < 50:
             logger.warning("Insufficient data to train model")
             return
@@ -225,6 +252,9 @@ class MLAnalytics:
         if not self.test_history:
             return {'message': 'No test history available'}
 
+        if not ML_AVAILABLE:
+            return self._analyze_failure_patterns_basic()
+
         df = pd.DataFrame(self.test_history)
 
         analysis = {
@@ -238,14 +268,53 @@ class MLAnalytics:
 
         return analysis
 
-    def _get_most_failing_tests(self, df: pd.DataFrame, top_n: int = 5) -> List[Dict]:
+    def _analyze_failure_patterns_basic(self) -> Dict:
+        """Basic failure analysis without pandas (fallback)."""
+        total_tests = len(self.test_history)
+        failures = [t for t in self.test_history if t.get('status') == 'failed']
+        failure_rate = len(failures) / total_tests if total_tests > 0 else 0
+
+        # Count failures by test name
+        test_failures = {}
+        for result in self.test_history:
+            name = result.get('name', 'unknown')
+            status = result.get('status')
+            if name not in test_failures:
+                test_failures[name] = {'total': 0, 'failed': 0}
+            test_failures[name]['total'] += 1
+            if status == 'failed':
+                test_failures[name]['failed'] += 1
+
+        # Get most failing tests
+        most_failing = sorted(
+            test_failures.items(),
+            key=lambda x: x[1]['failed'] / x[1]['total'] if x[1]['total'] > 0 else 0,
+            reverse=True
+        )[:5]
+
+        return {
+            'total_tests': total_tests,
+            'failure_rate': failure_rate,
+            'most_failing_tests': [
+                {
+                    'test_name': name,
+                    'failure_rate': stats['failed'] / stats['total'] if stats['total'] > 0 else 0
+                }
+                for name, stats in most_failing
+            ],
+            'failure_by_browser': {},
+            'failure_by_time': {},
+            'flaky_tests': []
+        }
+
+    def _get_most_failing_tests(self, df) -> List[Dict]:
         """Get tests with highest failure rates."""
         test_stats = df.groupby('name').agg({
             'status': lambda x: (x == 'failed').sum() / len(x)
         }).reset_index()
 
         test_stats.columns = ['test_name', 'failure_rate']
-        top_failing = test_stats.nlargest(top_n, 'failure_rate')
+        top_failing = test_stats.nlargest(5, 'failure_rate')
 
         return [
             {
@@ -255,7 +324,7 @@ class MLAnalytics:
             for _, row in top_failing.iterrows()
         ]
 
-    def _get_failures_by_browser(self, df: pd.DataFrame) -> Dict:
+    def _get_failures_by_browser(self, df) -> Dict:
         """Analyze failures by browser."""
         if 'browser' not in df.columns:
             return {}
@@ -269,7 +338,7 @@ class MLAnalytics:
             for browser, rate in browser_stats['status'].items()
         }
 
-    def _get_failures_by_time(self, df: pd.DataFrame) -> Dict:
+    def _get_failures_by_time(self, df) -> Dict:
         """Analyze failures by time of day."""
         if 'timestamp' not in df.columns:
             return {}
@@ -284,7 +353,7 @@ class MLAnalytics:
             for hour, rate in time_stats['status'].items()
         }
 
-    def _detect_flaky_tests(self, df: pd.DataFrame) -> List[str]:
+    def _detect_flaky_tests(self, df) -> List[str]:
         """Detect flaky tests (inconsistent pass/fail)."""
         flaky_tests = []
 
@@ -316,7 +385,7 @@ class MLAnalytics:
                 'flaky_test_count': len(analysis.get('flaky_tests', []))
             },
             'recommendations': [],
-            'trends': self._analyze_trends()
+            'trends': self._analyze_trends() if ML_AVAILABLE else {'message': 'ML not available'}
         }
 
         # Generate recommendations
@@ -339,6 +408,9 @@ class MLAnalytics:
         if len(self.test_history) < 10:
             return {'message': 'Insufficient data for trend analysis'}
 
+        if not ML_AVAILABLE:
+            return {'message': 'ML libraries required for trend analysis'}
+
         df = pd.DataFrame(self.test_history)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df = df.sort_values('timestamp')
@@ -351,7 +423,7 @@ class MLAnalytics:
         previous_trend = df['rolling_failure_rate'].head(10).mean()
 
         return {
-            'recent_failure_rate': round(recent_trend, 3),
+            'recent_failure_rate': round(recent_trend, 3) if not pd.isna(recent_trend) else 0.0,
             'trend': 'improving' if recent_trend < previous_trend else 'degrading'
         }
 

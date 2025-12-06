@@ -6,35 +6,28 @@ requests==2.31.0
 pytest==7.4.3
 pytest-xdist==3.5.0
 pytest-html==4.1.1
+pytest-asyncio==0.21.1
 allure-pytest==2.13.2
 
-# AI/ML Libraries
-tensorflow==2.15.0
+# AI/ML Libraries - Compatible versions
 scikit-learn==1.3.2
-numpy==1.26.2
+numpy==1.24.3
 pandas==2.1.4
 
 # Computer Vision & Image Processing
-opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
 Pillow==10.2.0
 pytesseract==0.3.10
 imagehash==4.3.1
 
-# Visual Testing
-selenium-visual-testing==1.0.0
-pixelmatch==0.3.0
-
-# Performance Testing
-locust==2.20.0
-
 # API Testing
-pytest-requests==0.2.0
+requests==2.31.0
 
 # Utilities
 python-dotenv==1.0.0
 pyyaml==6.0.1
 jsonschema==4.20.0
-faker==22.0.0
+Faker==22.0.0
 
 # Reporting
 matplotlib==3.8.2
@@ -51,3 +44,6 @@ colorlog==6.8.0
 black==23.12.1
 pylint==3.0.3
 pytest-cov==4.1.0
+
+# Optional AI/ML (TensorFlow) - Install separately if needed
+# tensorflow==2.15.0  # Uncomment if you need deep learning features
