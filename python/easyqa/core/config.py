@@ -1,4 +1,5 @@
 """Configuration management for EasyQA Framework."""
+
 import os
 import yaml
 from typing import Dict, Any, Optional
@@ -26,7 +27,7 @@ class Config:
         config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
 
         if config_path.exists():
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 self._config = yaml.safe_load(f)
         else:
             logger.warning(f"Config file not found at {config_path}, using defaults")
@@ -38,50 +39,41 @@ class Config:
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration."""
         return {
-            'browser': {
-                'default': 'chrome',
-                'headless': False,
-                'window_size': '1920,1080',
-                'timeout': 30
+            "browser": {
+                "default": "chrome",
+                "headless": False,
+                "window_size": "1920,1080",
+                "timeout": 30,
             },
-            'ai': {
-                'visual_testing': {
-                    'enabled': True,
-                    'threshold': 0.95,
-                    'model_path': 'models/visual_model.h5'
+            "ai": {
+                "visual_testing": {
+                    "enabled": True,
+                    "threshold": 0.95,
+                    "model_path": "models/visual_model.h5",
                 },
-                'self_healing': {
-                    'enabled': True,
-                    'confidence_threshold': 0.8,
-                    'max_attempts': 3
+                "self_healing": {
+                    "enabled": True,
+                    "confidence_threshold": 0.8,
+                    "max_attempts": 3,
                 },
-                'test_generation': {
-                    'enabled': True,
-                    'min_confidence': 0.7
-                }
+                "test_generation": {"enabled": True, "min_confidence": 0.7},
             },
-            'reporting': {
-                'screenshots_on_failure': True,
-                'video_recording': False,
-                'ai_insights': True
+            "reporting": {
+                "screenshots_on_failure": True,
+                "video_recording": False,
+                "ai_insights": True,
             },
-            'performance': {
-                'lighthouse_enabled': True,
-                'load_time_threshold': 3.0
-            },
-            'database': {
-                'type': 'sqlite',
-                'path': 'data/test_results.db'
-            }
+            "performance": {"lighthouse_enabled": True, "load_time_threshold": 3.0},
+            "database": {"type": "sqlite", "path": "data/test_results.db"},
         }
 
     def _load_env_overrides(self):
         """Load configuration overrides from environment variables."""
         env_mappings = {
-            'EASYQA_BROWSER': ('browser', 'default'),
-            'EASYQA_HEADLESS': ('browser', 'headless'),
-            'EASYQA_AI_VISUAL': ('ai', 'visual_testing', 'enabled'),
-            'EASYQA_AI_HEALING': ('ai', 'self_healing', 'enabled'),
+            "EASYQA_BROWSER": ("browser", "default"),
+            "EASYQA_HEADLESS": ("browser", "headless"),
+            "EASYQA_AI_VISUAL": ("ai", "visual_testing", "enabled"),
+            "EASYQA_AI_HEALING": ("ai", "self_healing", "enabled"),
         }
 
         for env_var, config_path in env_mappings.items():

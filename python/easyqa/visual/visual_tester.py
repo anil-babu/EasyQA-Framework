@@ -1,4 +1,5 @@
 """AI-Powered Visual Regression Testing Module."""
+
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
@@ -47,17 +48,14 @@ class VisualTester:
         # Store perceptual hash
         img_hash = imagehash.phash(img)
         hash_path = self.baseline_dir / f"{test_name}_hash.txt"
-        with open(hash_path, 'w') as f:
+        with open(hash_path, "w") as f:
             f.write(str(img_hash))
 
         logger.info(f"Baseline captured for {test_name} at {baseline_path}")
         return str(baseline_path)
 
     def compare_images(
-        self,
-        baseline_path: str,
-        current_path: str,
-        test_name: str
+        self, baseline_path: str, current_path: str, test_name: str
     ) -> Dict[str, any]:
         """
         Compare current screenshot with baseline using multiple AI techniques.
@@ -78,8 +76,9 @@ class VisualTester:
 
         # Resize images to same dimensions if needed
         if baseline_img.shape != current_img.shape:
-            current_img = cv2.resize(current_img,
-                                    (baseline_img.shape[1], baseline_img.shape[0]))
+            current_img = cv2.resize(
+                current_img, (baseline_img.shape[1], baseline_img.shape[0])
+            )
 
         # 1. Structural Similarity Index (SSIM)
         ssim_score = self._calculate_ssim(baseline_img, current_img)
@@ -94,31 +93,29 @@ class VisualTester:
         feature_match_score = self._compare_features(baseline_img, current_img)
 
         # Generate difference image
-        diff_img_path = self._generate_diff_image(
-            baseline_img, current_img, test_name
-        )
+        diff_img_path = self._generate_diff_image(baseline_img, current_img, test_name)
 
         # Calculate overall score
         overall_score = (
-            ssim_score * 0.4 +
-            hash_similarity * 0.3 +
-            (1 - diff_percentage) * 0.2 +
-            feature_match_score * 0.1
+            ssim_score * 0.4
+            + hash_similarity * 0.3
+            + (1 - diff_percentage) * 0.2
+            + feature_match_score * 0.1
         )
 
         result = {
-            'test_name': test_name,
-            'timestamp': datetime.now().isoformat(),
-            'passed': overall_score >= self.threshold,
-            'overall_score': round(overall_score, 4),
-            'ssim_score': round(ssim_score, 4),
-            'hash_similarity': round(hash_similarity, 4),
-            'pixel_diff_percentage': round(diff_percentage * 100, 2),
-            'feature_match_score': round(feature_match_score, 4),
-            'threshold': self.threshold,
-            'diff_image_path': diff_img_path,
-            'baseline_path': baseline_path,
-            'current_path': current_path
+            "test_name": test_name,
+            "timestamp": datetime.now().isoformat(),
+            "passed": overall_score >= self.threshold,
+            "overall_score": round(overall_score, 4),
+            "ssim_score": round(ssim_score, 4),
+            "hash_similarity": round(hash_similarity, 4),
+            "pixel_diff_percentage": round(diff_percentage * 100, 2),
+            "feature_match_score": round(feature_match_score, 4),
+            "threshold": self.threshold,
+            "diff_image_path": diff_img_path,
+            "baseline_path": baseline_path,
+            "current_path": current_path,
         }
 
         # Save result
@@ -136,21 +133,22 @@ class VisualTester:
         mu1 = cv2.GaussianBlur(gray1, (11, 11), 1.5)
         mu2 = cv2.GaussianBlur(gray2, (11, 11), 1.5)
 
-        mu1_sq = mu1 ** 2
-        mu2_sq = mu2 ** 2
+        mu1_sq = mu1**2
+        mu2_sq = mu2**2
         mu1_mu2 = mu1 * mu2
 
         # Calculate variance and covariance
-        sigma1_sq = cv2.GaussianBlur(gray1 ** 2, (11, 11), 1.5) - mu1_sq
-        sigma2_sq = cv2.GaussianBlur(gray2 ** 2, (11, 11), 1.5) - mu2_sq
+        sigma1_sq = cv2.GaussianBlur(gray1**2, (11, 11), 1.5) - mu1_sq
+        sigma2_sq = cv2.GaussianBlur(gray2**2, (11, 11), 1.5) - mu2_sq
         sigma12 = cv2.GaussianBlur(gray1 * gray2, (11, 11), 1.5) - mu1_mu2
 
         # SSIM formula
         c1 = (0.01 * 255) ** 2
         c2 = (0.03 * 255) ** 2
 
-        ssim_map = ((2 * mu1_mu2 + c1) * (2 * sigma12 + c2)) / \
-                   ((mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2))
+        ssim_map = ((2 * mu1_mu2 + c1) * (2 * sigma12 + c2)) / (
+            (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
+        )
 
         return float(np.mean(ssim_map))
 
@@ -209,10 +207,7 @@ class VisualTester:
         return min(match_score, 1.0)
 
     def _generate_diff_image(
-        self,
-        baseline: np.ndarray,
-        current: np.ndarray,
-        test_name: str
+        self, baseline: np.ndarray, current: np.ndarray, test_name: str
     ) -> str:
         """Generate visual difference image highlighting changes."""
         diff = cv2.absdiff(baseline, current)
@@ -226,23 +221,47 @@ class VisualTester:
         comparison = np.zeros((h, w * 3, 3), dtype=np.uint8)
 
         comparison[:, :w] = baseline
-        comparison[:, w:2*w] = current
+        comparison[:, w : 2 * w] = current
 
         # Highlight differences in third panel
         diff_highlight = current.copy()
         diff_highlight[mask > 0] = [0, 0, 255]  # Red overlay
-        comparison[:, 2*w:] = diff_highlight
+        comparison[:, 2 * w :] = diff_highlight
 
         # Add labels
-        cv2.putText(comparison, 'Baseline', (10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(comparison, 'Current', (w + 10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(comparison, 'Differences', (2*w + 10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(
+            comparison,
+            "Baseline",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+        )
+        cv2.putText(
+            comparison,
+            "Current",
+            (w + 10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+        )
+        cv2.putText(
+            comparison,
+            "Differences",
+            (2 * w + 10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+        )
 
         # Save comparison image
-        diff_path = self.results_dir / f"{test_name}_diff_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        diff_path = (
+            self.results_dir
+            / f"{test_name}_diff_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        )
         cv2.imwrite(str(diff_path), comparison)
 
         logger.info(f"Difference image saved to {diff_path}")
@@ -250,33 +269,40 @@ class VisualTester:
 
     def _save_result(self, result: Dict, test_name: str):
         """Save comparison result to JSON."""
-        result_path = self.results_dir / f"{test_name}_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        with open(result_path, 'w') as f:
+        result_path = (
+            self.results_dir
+            / f"{test_name}_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        )
+        with open(result_path, "w") as f:
             json.dump(result, f, indent=2)
 
     def get_ai_insights(self, result: Dict) -> List[str]:
         """Generate AI insights from visual comparison results."""
         insights = []
 
-        if not result['passed']:
-            insights.append(f"⚠️ Visual regression detected! Overall score: {result['overall_score']}")
+        if not result["passed"]:
+            insights.append(
+                f"⚠️ Visual regression detected! Overall score: {result['overall_score']}"
+            )
 
-            if result['pixel_diff_percentage'] > 5:
+            if result["pixel_diff_percentage"] > 5:
                 insights.append(
                     f"🔍 Significant pixel differences detected ({result['pixel_diff_percentage']}%). "
                     "This might indicate layout changes or content updates."
                 )
 
-            if result['hash_similarity'] < 0.9:
+            if result["hash_similarity"] < 0.9:
                 insights.append(
                     "📊 Perceptual hash indicates structural changes in the page."
                 )
 
-            if result['feature_match_score'] < 0.5:
+            if result["feature_match_score"] < 0.5:
                 insights.append(
                     "🎯 Feature matching shows significant changes in key UI elements."
                 )
         else:
-            insights.append(f"✅ Visual test passed! Similarity: {result['overall_score']}")
+            insights.append(
+                f"✅ Visual test passed! Similarity: {result['overall_score']}"
+            )
 
         return insights
