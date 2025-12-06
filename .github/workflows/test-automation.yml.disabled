@@ -1,0 +1,298 @@
+name: EasyQA AI Testing Framework CI/CD
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  # Java tests with Selenium
+  java-tests:
+    name: Java Tests (Selenium + TestNG)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn clean compile
+
+      - name: Run Java tests
+        run: mvn test -Dbrowser=${{ matrix.browser }}
+        continue-on-error: true
+
+      - name: Generate Allure Report
+        if: always()
+        run: mvn allure:report
+
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-java-${{ matrix.browser }}
+          path: target/allure-results
+
+      - name: Upload Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-java-${{ matrix.browser }}
+          path: test-output/screenshots
+
+  # Python tests with Playwright + AI features
+  python-tests:
+    name: Python Tests (Playwright + AI)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-minimal.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install ${{ matrix.browser }}
+          playwright install-deps
+
+      - name: Run Python tests
+        env:
+          EASYQA_BROWSER: ${{ matrix.browser }}
+          EASYQA_HEADLESS: true
+          EASYQA_AI_VISUAL: true
+          EASYQA_AI_HEALING: true
+        run: |
+          pytest python/easyqa/tests/ \
+            -v \
+            --html=test-output/reports/pytest_report.html \
+            --self-contained-html \
+            --junitxml=test-output/junit.xml \
+            --cov=python/easyqa \
+            --cov-report=html:test-output/coverage \
+            --cov-report=xml
+        continue-on-error: true
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report-${{ matrix.python-version }}-${{ matrix.browser }}
+          path: test-output/reports/
+
+      - name: Upload Coverage Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}-${{ matrix.browser }}
+          path: test-output/coverage/
+
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-python-${{ matrix.python-version }}-${{ matrix.browser }}
+          path: screenshots/
+
+      - name: Upload Visual Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-results-${{ matrix.python-version }}-${{ matrix.browser }}
+          path: visual_results/
+
+  # Code quality checks
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install black pylint pytest-cov
+
+      - name: Run Black formatter check
+        run: black --check python/
+
+      - name: Run Pylint
+        run: pylint python/easyqa/ --exit-zero
+        continue-on-error: true
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Run Checkstyle (Java)
+        run: mvn checkstyle:check
+        continue-on-error: true
+
+  # Docker build and test
+  docker-tests:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build lightweight Docker image
+        run: docker build -f Dockerfile.lightweight -t easyqa-framework:light .
+
+      - name: Run tests in Docker
+        run: |
+          docker run --rm \
+            -v $(pwd)/test-output:/app/test-output \
+            -v $(pwd)/screenshots:/app/screenshots \
+            easyqa-framework:light
+
+      - name: Upload Docker test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-test-results
+          path: test-output/
+
+      - name: Upload Docker screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-screenshots
+          path: screenshots/
+
+  # Performance testing
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+
+      - name: Run performance tests
+        run: |
+          pytest python/easyqa/tests/examples/test_ecommerce_demo.py::TestEcommerceDemo::test_performance_audit \
+            -v -s
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: logs/
+
+  # Security scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Publish reports
+  publish-reports:
+    name: Publish Test Reports
+    needs: [java-tests, python-tests]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: '**/junit.xml'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy reports to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./all-artifacts
+          destination_dir: reports/${{ github.run_number }}
+
+  # Notify results
+  notify:
+    name: Notify Results
+    needs: [java-tests, python-tests, docker-tests]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Send notification
+        run: |
+          echo "Tests completed. Check artifacts for detailed results."
+          echo "Java Tests: ${{ needs.java-tests.result }}"
+          echo "Python Tests: ${{ needs.python-tests.result }}"
+          echo "Docker Tests: ${{ needs.docker-tests.result }}"

@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Main test execution service
+  easyqa-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: easyqa-framework
+    volumes:
+      - ./test-output:/app/test-output
+      - ./screenshots:/app/screenshots
+      - ./videos:/app/videos
+      - ./logs:/app/logs
+      - ./visual_baselines:/app/visual_baselines
+      - ./visual_results:/app/visual_results
+      - ./data:/app/data
+      - ./test_data:/app/test_data
+    environment:
+      - EASYQA_BROWSER=chrome
+      - EASYQA_HEADLESS=true
+      - EASYQA_AI_VISUAL=true
+      - EASYQA_AI_HEALING=true
+      - CI=true
+    networks:
+      - easyqa-network
+    command: bash -c "mvn test && pytest python/easyqa/tests/ -v"
+
+  # Selenium Grid Hub (for distributed testing)
+  selenium-hub:
+    image: selenium/hub:4.16.0
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+      - "4442:4442"
+      - "4443:4443"
+    networks:
+      - easyqa-network
+
+  # Chrome Node
+  chrome:
+    image: selenium/node-chrome:4.16.0
+    container_name: selenium-chrome
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=5
+    shm_size: 2gb
+    networks:
+      - easyqa-network
+
+  # Firefox Node
+  firefox:
+    image: selenium/node-firefox:4.16.0
+    container_name: selenium-firefox
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=5
+    shm_size: 2gb
+    networks:
+      - easyqa-network
+
+  # Edge Node
+  edge:
+    image: selenium/node-edge:4.16.0
+    container_name: selenium-edge
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=5
+    shm_size: 2gb
+    networks:
+      - easyqa-network
+
+  # Allure Report Server
+  allure:
+    image: frankescobar/allure-docker-service:2.21.0
+    container_name: allure-server
+    ports:
+      - "5050:5050"
+      - "5252:5252"
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=3
+      - KEEP_HISTORY=TRUE
+    volumes:
+      - ./test-output/allure-results:/app/allure-results
+      - ./test-output/allure-reports:/app/default-reports
+    networks:
+      - easyqa-network
+
+networks:
+  easyqa-network:
+    driver: bridge
+
+volumes:
+  test-output:
+  screenshots:
+  videos:
+  logs:

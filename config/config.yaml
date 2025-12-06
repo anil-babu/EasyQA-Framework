@@ -1,0 +1,116 @@
+# EasyQA Framework Configuration
+
+# Browser Settings
+browser:
+  default: chrome
+  headless: false
+  window_size: "1920,1080"
+  timeout: 30
+  browsers:
+    - chrome
+    - firefox
+    - edge
+    - safari
+
+# AI/ML Features
+ai:
+  # Visual Testing
+  visual_testing:
+    enabled: true
+    threshold: 0.95  # Similarity threshold (0-1)
+    model_path: models/visual_model.h5
+    baseline_dir: visual_baselines
+    results_dir: visual_results
+
+  # Self-Healing Locators
+  self_healing:
+    enabled: true
+    confidence_threshold: 0.8
+    max_attempts: 3
+    learning_enabled: true
+    history_file: data/locator_healing_history.json
+
+  # Test Generation
+  test_generation:
+    enabled: true
+    min_confidence: 0.7
+    auto_generate: false
+
+  # Predictive Analytics
+  predictive_analytics:
+    enabled: true
+    min_history_size: 50
+    retrain_interval: 100  # Retrain model after N test runs
+
+# Reporting
+reporting:
+  screenshots_on_failure: true
+  screenshots_on_success: false
+  video_recording: false
+  allure_reports: true
+  extent_reports: true
+  ai_insights: true
+  report_dir: test-output/reports
+
+# Performance Testing
+performance:
+  enabled: true
+  lighthouse_enabled: true
+  load_time_threshold: 3.0  # seconds
+  memory_threshold: 100  # MB
+
+# Database
+database:
+  type: sqlite
+  path: data/test_results.db
+  backup_enabled: true
+
+# Test Execution
+execution:
+  parallel: true
+  thread_count: 4
+  retry_failed: true
+  retry_count: 2
+  timeout: 300  # seconds
+
+# Logging
+logging:
+  level: INFO
+  file: logs/easyqa.log
+  console: true
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Test Data
+test_data:
+  generator:
+    locale: en_US
+    seed: null
+  directory: test_data
+  formats:
+    - json
+    - csv
+    - xlsx
+
+# Notifications
+notifications:
+  enabled: false
+  slack:
+    enabled: false
+    webhook_url: ""
+  email:
+    enabled: false
+    smtp_server: ""
+    recipients: []
+
+# CI/CD
+ci_cd:
+  enabled: true
+  platforms:
+    - github_actions
+    - jenkins
+    - gitlab_ci
+  artifacts:
+    - reports
+    - screenshots
+    - videos
+    - logs

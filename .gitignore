@@ -68,3 +68,17 @@ application.properties
 # Virtual machine crash logs
 hs_err_pid*
 replay_pid*
+# Python cache files
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Test data
+data/test_history_temp.json
+
